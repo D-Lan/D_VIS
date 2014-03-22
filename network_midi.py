@@ -22,14 +22,21 @@ def server_loop(parent, status, lock):
 	
 	out=[]
 	looping=True
-	while looping:
+	while looping: 
 		
 		if status.value==0:
 			looping=False
 			
 		elif status.value==1: #Listen
-			out.append(conn.recv(1024))
-			
+			try:
+				out.append(conn.recv(1024))
+			except socket.error:
+				lock.acquire()
+				print('Connection lost')
+				lock.release()
+				looping=False
+				
+				
 		elif status.value==2: #Send data
 			lock.acquire()
 			print('send!')
@@ -39,7 +46,6 @@ def server_loop(parent, status, lock):
 			status.value=1
 			
 		sleep(.1)
-	conn.close()
 		
 
 
@@ -55,7 +61,7 @@ def create_server_controller(new_server): #mimic the Input class to increase com
 		def read(self, num_events):
 			return( self.server.read(num_events) )
 		
-		def close(): #Pretend to close midi stream
+		def close(self): #Pretend to close midi stream
 			pass 
 				
 	return server_controller()
@@ -113,10 +119,11 @@ if __name__=='__main__':
 	midi_handler.init()
 	midi_input=midi_handler.Input(0)
 	print('done')
-	print(midi_input.read(10))
-	sleep(2)
-	print(midi_input.read(10))
-	
+	sleep(1)
+	for i in range(10):
+		print(midi_input.read(10))
+		sleep(1)
+		
 	midi_input.close()
 	midi_handler.quit()
 	print('!done!')
