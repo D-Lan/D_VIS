@@ -73,16 +73,3 @@ import fft_input
 #This will probably never be implemented. This is just an idea.
 import web_cam
 
-
-
-
-
-
-
-
-
-
-
-
-		
-	
