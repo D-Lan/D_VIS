@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-#Network midi (v0.01) 3-22-14 1644
+#Network midi (v0.02) 3-22-14 1644
 
 #accept network connection and receive midi data. Then pass the data to main.
 #The goal of this is to be as close to pygame.midi as possible so they can be used interchangeably with no modifications.
@@ -13,12 +13,19 @@ from time import sleep
 
 PORT=50007
 
-def server_loop(parent, status, lock):
-	
+
+def get_connection():
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.bind(('', PORT))
 	s.listen(1)
 	conn, addr = s.accept()
+	return conn
+
+
+
+def server_loop(parent, status, lock):
+	
+	conn=get_connection()
 	
 	out=[]
 	looping=True
@@ -30,12 +37,12 @@ def server_loop(parent, status, lock):
 		elif status.value==1: #Listen
 			try:
 				out.append(conn.recv(1024))
+				
 			except socket.error:
 				lock.acquire()
 				print('Connection lost')
 				lock.release()
-				looping=False
-				
+				conn=get_connection()
 				
 		elif status.value==2: #Send data
 			lock.acquire()
@@ -45,18 +52,30 @@ def server_loop(parent, status, lock):
 			out=[]
 			status.value=1
 			
+		elif status.value==3:
+			parent.recv()
+			status.value=1
+			
 		sleep(.1)
 		
 
 
 
 
-
+#server contoller acts as Input=pygame.midi.Input(device)
+#This may be removed with further testing.
+#This can be replaced with just reassigning the server to the input object.
 
 def create_server_controller(new_server): #mimic the Input class to increase compatablity 
 	
 	class server_controller():
 		server=new_server
+		
+		def pause(self):
+			self.server.pause()
+			
+		def unpause(self):
+			self.server.unpause()
 		
 		def read(self, num_events):
 			return( self.server.read(num_events) )
@@ -80,6 +99,7 @@ def create_server():
 			kill=0
 			listen=1
 			read=2
+			pause=3
 					
 		
 		def __init__(self): #init the process and comm objects
@@ -101,6 +121,13 @@ def create_server():
 		def read(self, num_events):
 			self.process_status.value=self.status.read
 			return(self.child.recv()[0:num_events])
+		
+		def pause(self):
+			self.process_status.value=self.status.pause
+		
+		def unpause(self):
+			self.process_status.value=self.status.read
+			self.child.send(1)
 		
 		
 		
