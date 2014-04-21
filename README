@@ -1,0 +1,12 @@
+D_VIS by D_Lan (March 2014)
+
+An audio visualizer written in python using pygame. It uses midi input (standard input or internal network listener) to manipulate pygame objects. 
+
+
+Currently only bits and peices are finnished.
+
+To do:
+	User Interface
+	FFT audio analysis
+	OpenGL support
+	Webcam input (possibly)
